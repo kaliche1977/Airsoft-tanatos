@@ -2,14 +2,136 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Airsoft Tanatos</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <title>Soldado 3D Realista</title>
+  <style>
+    body { margin: 0; background: #111; color: #fff; font-family: sans-serif; }
+    canvas { display: block; }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 5px;
+      z-index: 10;
+      max-height: 95vh;
+      overflow-y: auto;
+    }
+    select, label, button { display: block; margin-bottom: 8px; }
+    #resumen { margin-top: 10px; background: #222; padding: 10px; border-radius: 5px; }
+  </style>
 </head>
 <body>
-    <h1>Bienvenido a Airsoft Tanatos</h1>
-    <p>Experimenta la batalla definitiva. Elige tu equipo, personaliza tu réplica y prepárate para la acción.</p>
-    <a href="inscripcion.html">Inscríbete</a>
-    <a href="personalizacion.html">Personaliza tu juego</a>
+  <div id="ui">
+    <label for="camuflaje">Selecciona Camuflaje:</label>
+    <select id="camuflaje">
+      <option value="multicam">Multicam</option>
+      <option value="black">Black</option>
+    </select>
+
+    <label for="replica">Selecciona Réplica:</label>
+    <select id="replica">
+      <option value="M4">M4 - Versátil, ligera y precisa</option>
+      <option value="AK47">AK47 - Potente y resistente</option>
+      <option value="G36">G36 - Ideal para media distancia</option>
+      <option value="MP5">MP5 - Compacta para CQB</option>
+      <option value="Scar">SCAR-L - Estilo moderno y modular</option>
+    </select>
+
+    <label>Extras:</label>
+    <label><input type="checkbox" class="extra" value="BBS extra"> BBS extra</label>
+    <label><input type="checkbox" class="extra" value="Pistola de mano"> Pistola de mano</label>
+    <label><input type="checkbox" class="extra" value="Escopeta sniper"> Escopeta sniper</label>
+    <label><input type="checkbox" class="extra" value="Granadas"> Granadas</label>
+    <label><input type="checkbox" class="extra" value="Minas claymore"> Minas claymore</label>
+    <label><input type="checkbox" class="extra" value="Foto shoot"> Foto shoot</label>
+    <label><input type="checkbox" class="extra" value="Video by drone"> Video by drone</label>
+
+    <div id="resumen"></div>
+    <a id="botonReserva" href="#" target="_blank"><button>Reservar y Comprar</button></a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+  <script>
+    let scene, camera, renderer, controls, model;
+
+    const textures = {
+      multicam: 'https://i.imgur.com/multicam_texture.jpg',
+      black: 'https://i.imgur.com/black_texture.jpg'
+    };
+
+    init();
+
+    function init() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 1.6, 3);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
+      scene.add(hemiLight);
+      const dirLight = new THREE.DirectionalLight(0xffffff);
+      dirLight.position.set(3, 10, 10);
+      scene.add(dirLight);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+      const loader = new THREE.GLTFLoader();
+      loader.load('https://models.babylonjs.com/soldier.glb', function(gltf) {
+        model = gltf.scene;
+        scene.add(model);
+        applyTexture('multicam');
+      });
+
+      document.getElementById('camuflaje').addEventListener('change', updateResumen);
+      document.getElementById('replica').addEventListener('change', updateResumen);
+      document.querySelectorAll('.extra').forEach(el => el.addEventListener('change', updateResumen));
+
+      animate();
+    }
+
+    function applyTexture(type) {
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load(textures[type], function(texture) {
+        model.traverse(function(child) {
+          if (child.isMesh) {
+            child.material.map = texture;
+            child.material.needsUpdate = true;
+          }
+        });
+      });
+    }
+
+    function updateResumen() {
+      const camuflaje = document.getElementById('camuflaje').value;
+      const replica = document.getElementById('replica').value;
+      const extras = [...document.querySelectorAll('.extra:checked')].map(e => e.value);
+
+      let texto = `<strong>Equipo:</strong> ${camuflaje}<br>`;
+      texto += `<strong>Réplica:</strong> ${replica}<br>`;
+      texto += `<strong>Protecciones:</strong> Casco, Lentes de protección, Chaleco<br>`;
+      texto += `<strong>Extras:</strong> ${extras.length > 0 ? extras.join(', ') : 'Ninguno'}<br>`;
+
+      document.getElementById('resumen').innerHTML = texto;
+      document.getElementById('botonReserva').href = "https://fareharbor.com/embeds/book/tuempresa/items/";
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
 </body>
 </html>
